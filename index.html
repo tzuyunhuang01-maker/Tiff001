@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Resilient Odyssey | 2026 Interactive Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,700;1,400&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #fdfcf9;
+            --text-main: #222;
+            --accent-gold: #b58d4a;
+            --soft-gold: #f4eee0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: var(--bg-color); font-family: 'Noto Sans TC', sans-serif; font-size: 14px; color: var(--text-main); line-height: 1.6; }
+        .serif { font-family: 'Bodoni Moda', serif; }
+        .reveal { opacity: 0; transform: translateY(20px); transition: all 0.8s ease-out; }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+
+        header { padding: 40px 20px; text-align: center; background: white; }
+        .hero-h1 { font-size: 2rem; color: var(--accent-gold); font-style: italic; }
+
+        /* --- Map Section --- */
+        #map { 
+            height: 480px; 
+            width: 100%; 
+            background: #f4f1ea;
+            border-top: 1px solid var(--soft-gold);
+            border-bottom: 1px solid var(--soft-gold);
+        }
+        .map-instruction {
+            text-align: center; padding: 12px; font-size: 0.8rem; color: var(--accent-gold); background: #fff;
+            letter-spacing: 1px;
+        }
+
+        /* 自定義飛機 Marker 樣式 */
+        .plane-icon {
+            color: var(--accent-gold);
+            font-size: 20px;
+            text-shadow: 0 0 5px rgba(255,255,255,0.8);
+            transition: transform 0.3s;
+        }
+        .plane-icon:hover { transform: scale(1.3); }
+
+        .leaflet-popup-content-wrapper {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 4px; padding: 8px;
+        }
+        .popup-story h4 { color: var(--accent-gold); margin-bottom: 6px; font-family: 'Bodoni Moda', serif; border-bottom: 1px solid var(--soft-gold); font-size: 1rem; }
+        .popup-story p { font-size: 0.85rem; color: #444; text-align: justify; }
+
+        /* --- Summary Grid --- */
+        .summary-wrapper {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 25px 20px;
+            max-width: 600px; margin: 0 auto;
+        }
+        .summary-card { border-top: 1px solid var(--accent-gold); padding-top: 10px; }
+        .summary-card h3 { font-size: 0.75rem; color: var(--accent-gold); margin-bottom: 5px; }
+        .summary-card p { font-size: 0.8rem; color: #666; }
+
+        /* --- Energy Curve --- */
+        .curve-section { padding: 40px 0; background: white; text-align: center; }
+        .scroll-box { overflow-x: auto; padding: 10px 20px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .scroll-box::-webkit-scrollbar { display: none; }
+        .chart-wrapper { width: 850px; height: 280px; margin: 0 auto; }
+
+        /* --- Medals --- */
+        .medal-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+            padding: 30px 20px; max-width: 450px; margin: 0 auto;
+        }
+        .medal-item { text-align: center; }
+        .medal-circle {
+            width: 50px; height: 50px; border-radius: 50%; margin: 0 auto 8px;
+            display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .m-gold { background: linear-gradient(135deg, #ffd700, #f39c12); }
+        .m-blue { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .m-purple { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+        .m-rose { background: linear-gradient(135deg, #ff7675, #d63031); }
+        .m-teal { background: linear-gradient(135deg, #1abc9c, #16a085); }
+
+        footer { padding: 50px 20px; text-align: center; background: #1a1a1a; color: #555; font-size: 0.7rem; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1 class="hero-h1">The Resilient Odyssey</h1>
+    <p class="serif" style="font-size: 0.7rem; letter-spacing: 3px; color: #999;">PERSONAL JOURNEY 2013-2026</p>
+</header>
+
+<div class="summary-wrapper reveal">
+    <div class="summary-card">
+        <h3>我是誰</h3>
+        <p>擁有8年強大 GTM 能力的市場拓荒者。在高壓環境下淬鍊出韌性，擅長帶領團隊從落後完成逆襲。</p>
+    </div>
+    <div class="summary-card">
+        <h3>核心優勢</h3>
+        <p>具備非洲、東南亞實戰經驗。紮實的市場份額突圍經驗與利潤中心 (PNL) 管理意識。</p>
+    </div>
+    <div class="summary-card">
+        <h3>2026 戰略</h3>
+        <p>主導泰國耳機市場操盤。透過 DDP 模式、充電品類份額超越綠聯，以及實現OWS跳變增量，實現泰國業績重大突破和提升。</p>
+    </div>
+    <div class="summary-card">
+        <h3>未來三年願景</h3>
+        <p>晉升國家經理。建立標準化新興市場開拓模型，成為跨國品牌的開疆大將。</p>
+    </div>
+</div>
+
+<div class="map-instruction serif"><i class="fas fa-plane-departure"></i> 點擊小飛機，探索每一站的經歷</div>
+<div id="map"></div>
+
+<section class="curve-section reveal">
+    <h2 class="serif" style="font-size: 1.4rem; margin-bottom: 5px;">韌性能量曲線</h2>
+    <p style="font-size: 0.7rem; color: #999; margin-bottom: 20px;">跨越低谷與高峰的成長波段</p>
+    <div class="scroll-box">
+        <div class="chart-wrapper">
+            <canvas id="energyChart"></canvas>
+        </div>
+    </div>
+    <p style="font-size: 0.7rem; color: var(--accent-gold); margin-top: 10px;">( 左右滑動查看完整年份 )</p>
+</section>
+
+<section class="reveal">
+    <h2 class="serif" style="text-align: center; font-size: 1.4rem; margin: 30px 0 10px;">成就勳章館</h2>
+    <div class="medal-grid">
+        <div class="medal-item"><div class="medal-circle m-gold"><i class="fas fa-bolt"></i></div><p style="font-size:0.7rem;">黑馬逆襲</p></div>
+        <div class="medal-item"><div class="medal-circle m-blue"><i class="fas fa-globe-africa"></i></div><p style="font-size:0.7rem;">開疆先鋒</p></div>
+        <div class="medal-item"><div class="medal-circle m-purple"><i class="fas fa-trophy"></i></div><p style="font-size:0.7rem;">市佔王者</p></div>
+        <div class="medal-item"><div class="medal-circle m-rose"><i class="fas fa-fire-alt"></i></div><p style="font-size:0.7rem;">逆境覺醒</p></div>
+        <div class="medal-item"><div class="medal-circle m-teal"><i class="fas fa-users-cog"></i></div><p style="font-size:0.7rem;">矩陣指揮</p></div>
+    </div>
+</section>
+
+<footer class="serif">
+    <p>THE JOURNEY IS THE REWARD. © 2026</p>
+    <p style="margin-top: 10px; opacity: 0.5;">From Chiayi to Southeast Asia</p>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    // 1. 初始化地圖
+    const map = L.map('map', {
+        center: [12, 65], 
+        zoom: 3,
+        minZoom: 2,
+        scrollWheelZoom: false
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CartoDB'
+    }).addTo(map);
+
+    // 2. 更新足跡數據
+    const journeys = [
+        { 
+            name: "嘉義/台北", 
+            coords: [23.5, 120.3], 
+            story: "<h4>2013-2017 覺醒</h4><p>黑馬進入政大商學院。第一次發現世界之大。從這裡開始，將過往的挫折化作向外探索世界的動力。</p>" 
+        },
+        { 
+            name: "北京", 
+            coords: [39.9, 116.4], 
+            story: "<h4>2016 視野挑戰</h4><p>在高速變動的北京交換和實習，建立職場心態，即便面臨挫折也持續尋找突破口。體會到北京的速度和互聯網的崛起。</p>" 
+        },
+        { 
+            name: "非洲", 
+            coords: [6.5, 3.4], 
+            story: "<h4>2019 非洲開拓</h4><p>深入奈及利亞、肯亞和烏干達，在互聯網荒原中擔任 BD，完成了第一次全球視野的實踐。</p>" 
+        },
+        { 
+            name: "雅加達", 
+            coords: [-6.2, 106.8], 
+            story: "<h4>2021-2025 榮耀和重大挫折</h4><p>派駐印尼，維持華碩市佔第一。紮實訓練 GTM 能力。帶領安克印尼從份額第六殺到第一，證明最強韌性。</p>" 
+        },
+        { 
+            name: "曼谷", 
+            coords: [13.7, 100.5], 
+            story: "<h4>2026 重升組長</h4><p>重回管理崗位，主導耳機品類。目標帶領團隊在泰國市場實現充電和耳機品類業績雙突破，再次躍遷。</p>" 
+        }
+    ];
+
+    // 3. 自定義飛機圖標
+    const planeIcon = L.divIcon({
+        html: '<i class="fas fa-plane plane-icon"></i>',
+        className: 'custom-div-icon',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+    });
+
+    const latlngs = journeys.map(j => j.coords);
+    
+    // 繪製航線
+    L.polyline(latlngs, {
+        color: '#b58d4a',
+        weight: 1.5,
+        opacity: 0.4,
+        dashArray: '5, 8'
+    }).addTo(map);
+
+    journeys.forEach(j => {
+        const marker = L.marker(j.coords, { icon: planeIcon }).addTo(map);
+        marker.bindPopup(j.story, { className: 'popup-story' });
+    });
+
+    // 4. 精確能量曲線圖表
+    const ctx = document.getElementById('energyChart').getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 0, 250);
+    grad.addColorStop(0, 'rgba(181, 141, 74, 0.4)');
+    grad.addColorStop(1, 'rgba(181, 141, 74, 0)');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['2013 嘉義讀高中','2013 黑馬考上政大','2016 北京交換和實習挫折','2019 開拓非洲','2020-21 疫情','2022 華碩維持第一','2023 職場挫折','2025 帶領安克成為第一','2025 人生挫折，轉泰國','2026 重升組長'],
+            datasets: [{
+                data: [10, 85, 30, 80, 45, 95, 30, 95, 25, 75],
+                borderColor: '#b58d4a',
+                borderWidth: 3,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: '#b58d4a',
+                pointRadius: 6,
+                fill: true,
+                backgroundColor: grad,
+                tension: 0.4
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { display: false, min: 0, max: 100 },
+                x: { 
+                    ticks: { color: '#b58d4a', font: { size: 10 } },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+
+    // 5. Scroll Reveal
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('active'); });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
